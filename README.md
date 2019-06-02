@@ -6,10 +6,29 @@ Arduino library for the VNH3SP30 or VNH3ASP30 motor controller.
 
 To install this library use the **Clone or download > Download ZIP** button on the repository home page and then install the library in your Arduino environment using **Sketch > Include Library > Add .ZIP Library...**
 
-This library supports AVR based Arduino boards (Arduino MEGA, UNO, Nano, Micro, etc.).
+This library supports all AVR based Arduino boards that support the analogwrite function to generate PWM signals (most boards). If you install the ESP_AnalogWrite library, this library should also work with ESP32 boards (not yet tested).
+
+### VNH3SP30 board
+
+The VNH3SP30 chip has 3 key control lines:
+PWM - duty cycle to control motor speed
+INA + INB - to control the function:
+
+```
+ INA=1, INB=1 brake to Vcc
+ INA=0, INB=0 brake to Gnd
+ INA=1, INB=0 forward spin
+ INA=0, INB=1 backward spin
+```
+The VNH3SP30 chip also has 2 control/diagnose pins: DIAGA/ENA and DIAGB/ENB. These pins should have a pull up resister to Vcc (which is on most boards). These pins each have 2 functions:
+- enable the board (driving the DIAGA/ENA pin low will disable the A-side of the H bridge, driving DIAGB/ENB will disable the B-side of the H bridge)
+- fault condition: the VNH3SP30 chip will drive DIAG1/ENA or DIAGB/ENB low when the chip is overloaded (too high temperature on either the A or B side)
+
+These pins are so called "open collector" lines. Due to the fact Arduino can not be programmed as open collector, this library only implements sensing the fault condition. This means you can simply connect both pins and sense if the value is a 0 to report a fault condition.
+
+On some boards the DIAGA/ENA and DIAGB/ENB pins arealready connected together as a single "EN" board connection.
 
 ### Prerequisites
-
 
 
 
@@ -18,22 +37,35 @@ This library supports AVR based Arduino boards (Arduino MEGA, UNO, Nano, Micro, 
 This example is for any AVR Arduino board. Note: this example is for AVR based boards only as the esp32 library does not support the analogwrite() function used by the servo.h library.
 
 ```
-#include <IBusBM.h>
-#include <Servo.h>
+#include <VNH3SP30.h>
 
-IBusBM IBus;    // IBus object
-Servo myservo;  // create servo object to control a servo
+VNH3SP30 Motor1;
+#define M1_PWM 3		// pwm pin motor
+#define M1_INA 4		// control pin INA
+#define M1_INB 5		// control pin INB
+#define M1_DIAG 6		// diagnose pins (combined DIAGA/ENA and DIAGB/ENB)
 
 void setup() {
-  IBus.begin(Serial);    // iBUS object connected to serial0 RX pin
-  myservo.attach(9);     // attaches the servo on pin 9 to the servo object
+  Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG);    // Motor 1 object connected to VNH3SP30 board through pins 
+  Serial.begin(115200);   
 }
 
 void loop() {
-  int val;
-  val = IBus.readChannel(0); // get latest value for servo channel 1
-  myservo.writeMicroseconds(val);   // sets the servo position 
-  delay(20);
+  Serial.println("Full speed forward");
+  Motor1.setSpeed(400); // motor full-speed "forward"
+  delay(2000); // wait for 2 seconds
+ 
+  Serial.println("Motor stop (coast)");
+  Motor1.setSpeed(0); // motor stop
+  delay(2000); // wait for 2 seconds
+ 
+  Serial.println("Full speed backward");
+  Motor1.setSpeed(-400); // motor full-speed "backward"
+  delay(2000); // wait for 2 seconds
+ 
+  Serial.println("Motor stop (coast)");
+  Motor1.setSpeed(0); // motor stop
+  delay(2000); // wait for 2 seconds
 }
 
 ```
@@ -44,48 +76,24 @@ void loop() {
 The VNH3SP30 class exposes the following functions:
 
 ```
-- void begin(HardwareSerial& serial, int8_t timerid=0, int8_t rxPin=-1, int8_t txPin=-1);
+- void begin(int8_t pwmPin, inaPin, inbPin, diagPin);
 ```
-This initializes the library f
+This initializes the library and allocates the defined pins
 
 ```
-uint8_t addSensor(uint8_t type); 
+uint8_t setSpeed(int speed); 
 ```
-Defines new sensor of type "type", returns sensor number (first is number 1)
+Sets motor speed, returns true if success, returns false when VNH3SP30 is overloaded. Speed should be between -400 and +400. A speed of 0 means free run.
 
 ```
-uint16_t readChannel(uint8_t channelNr);
+uint8_t brake(int brakepower);
 ```
-Read the value of servo channel 0..9 corresponding with servo channels 1..10.
+Brake motor. brakepower=0 (or negative) same as setSpeed(0) - free run. brakepower positive (max 400) brake faster.
 
 ```
-void setSensorMeasurement(uint8_t adr, uint16_t value);
-```
-Set value of sensor number adr to a given value (first sensor is number 1). The background process will send the value back through the receiver.
-
-```
-void loop();
-```
-Call the internal polling function (at least once per 1 ms) in case you disable the timer interrup. See below. If you have multiple instances of the IbusBM class, you only need to call this function for the first instance.
-
-The IBusBM class exposes the following counters. Counters are 1 byte (value 0..255) and values can be used by your code to understand if new data is available. 
-
-```
-uint8_t cnt_rec; // count received number of servo messages from receiver
-uint8_t cnt_poll; // count received number of sensor poll messages
-uint8_t cnt_sensor; // count times a sensor value has been sent back
-```
-
-Counters can also be used to debug the hardware connections between the receiver and the Arduino board: If at least one sensor is defined, the RX pin will receive sensor poll messages. If the sensor is not able to "talk back" to the receiver the receiver will try to establish contact with the sensor every 7ms and the cnt_poll counter will increment. Only if the TX pin is correctly connected to the receiver, the cnt_sensor counter will increment and the cnt_poll value will stay the same.
-
-
 
 ## Example sketches provided
 
 Example sketches:
 
-- **Ibus2PWM**: converts iBUS data to Servo PWM format: Reads data from first servo channel and translates this to PWM signal to send to a normal servo (AVR version)
-- **Ibus2PWM_ESP32**: converts iBUS data to Servo PWM format: Reads data from first servo channel and translates this to PWM signal to send to a normal servo (ESP32 version)
-- **Ibus_singlemonitor**: monitor/debugger for receivers with a single iBUS pin (providing both servo and sensor data such as the Flysky X6B and Flysky FS-iA8X). Prints out servo channels to the standard serial output (PC debug window) and simulates 2 sensors with random values sent back to transmitter (as long as your receiver supports this). Requires Arduino board with 2 or more hardware serial ports (such as MEGA 2560)
-- **Ibus_multimonitor**: monitor/debugger for receivers with a two separate iBUS pins (one for servo data and one for sensor data, such as the TGY-IA6B). Prints out servo channels to the standard serial output (PC debug window) and simulates 2 sensors with random values sent back to transmitter. Requires Arduino board with 3 or more hardware serial ports (such as MEGA 2560)
-- **IBus_sensor**: simulate two telemetry sensors and send values back over the iBUS to the receiver to be shown in the display of your transmitter.
+- **Demo**: Controls a single motor (sketch as shown above)
