@@ -25,7 +25,7 @@ Most boards have **3** key **control** lines:
  INA=1, INB=0 forward spin
  INA=0, INB=1 backward spin
 ```
-**Tip**: If you want to reverse the motor (forwards becomes backwards), you can either use negative values for the speed() function or simply reverse the pins for INA and INB.
+**Tip**: If you want to reverse the motor (forwards becomes backwards), you can either use negative values for the speed() function or simply reverse the INA and INB pins when calling the begin() function.
 
 All chips also have 2 **enable/diagnose** pins: **DIAGA/ENA** and **DIAGB/ENB**. These pins should have a pull up resister to Vcc (which is on most boards). These pins each have 2 functions:
 - enable the board (driving the DIAGA/ENA pin low will disable the A-side of the H bridge, driving DIAGB/ENB will disable the B-side of the H bridge)
@@ -100,38 +100,37 @@ void loop() {
   delay(4000); // wait for 4 seconds
   Serial.print("Current after brake="); Serial.println(Motor1.motorcurrent());
 }
-
 ```
 
 ## Setting speed and breaking
 
-A motor controller will provide a fixed voltage to the motor, depending on the speed setting and the supply voltage of the VNH3SP30 board. A setSpeed() setting of 400 or -400 will provide the full supply voltage. A speed setting of 0 is equivalent to a non-connected motor. This means a motor will run free and the vehicle will not brake (except due to friction in the motor).
+A motor controller will provide a fixed voltage to the motor, depending on the speed setting and the supply voltage of the VNH3SP30 board. A setSpeed() setting of 400 or -400 will provide the full supply voltage. A speed setting of 0 is equivalent to a non-connected motor. This means a motor will run free and the vehicle will not brake (except due to internal motor friction).
 
 The brake() function will force the motor to a halt. The braking power can be 0, which is free run and the same as setSpeed(0). A setting of brake(400) represents maximum brake level and is equivalent to a motor that is not connected to a power source, but with its power wires (black and red) connected.
 
 ## Class member functions and data members
 
-The VNH3SP30 class exposes the following functions:
+The VNH3SP30 class exposes the following functions and internal variables:
 
 ```
-- void begin(int8_t pwmPin, inaPin, inbPin, diagPin);
+- void begin(int8_t pwmPin, inaPin, inbPin, diagPin, csPin);
 ```
-This initializes the library and allocates the defined pins. You can provide a -1 for the diagPin parameter if you do not want to use the temperature alarm from the VNH3SP30 board.
+This initializes the library and allocates the defined pins. You can provide a -1 for the diagPin or the csPin parameter if you do not want to use the temperature alarm or current senso from the VNH3SP30 board.
 
 ```
 uint8_t setSpeed(int speed); 
 ```
-Sets motor speed, returns true if success, returns false when VNH3SP30 is overloaded. Speed should be between -400 and +400. A speed of 0 means free run.
+Sets motor speed, returns true if success, returns false when VNH3SP30 is overloaded. Speed should be between -400 and +400. A speed of 0 means free run. Returns motor status based on diagPin (true is ok).
 
 ```
 uint8_t brake(int brakepower);
 ```
-Brake motor. brakepower=0 (or negative) same as setSpeed(0) - free run. If brakepower is positive, the motor will brake faster. A value of 400 is equivalent to full brake.
+Brake motor. brakepower=0 (or negative) same as setSpeed(0) - free run. If brakepower is positive, the motor will brake faster. A value of 400 is equivalent to full brake. Returns motor status based on diagPin (true is ok).
 
 ```
 uint8_t status(); 
 ```
-Returns controller status. true is ok, false means overloaded
+Returns motor status based on diagPin (true is ok, false means overloaded).
 
 ```
 int motorcurrent();
@@ -143,10 +142,9 @@ int speed;
 ```
 This variable contains the current speed setting.
 
-## Motor 
 ## Example sketches provided
 
 Example sketches:
 
 - **Single**: Controls a single motor (sketch as shown above).
-- **Dual**: Controls two motors, including illustration how to implement vehicle turning.
+- **Dual**: Controls two motors, including an illustration how to implement vehicle turning.
