@@ -1,3 +1,14 @@
+/*
+ * VNH3SP30 motor driver library - demo for a single motor
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public 
+ * License as published by the Free Software Foundation; either  
+ * version 2.1 of the License, or (at your option) any later version.
+ *   
+ * Created 2 June 2019 Bart Mellink
+ */
+
 #include <VNH3SP30.h>
 
 VNH3SP30 Motor1;    // define control object for 1 motor
@@ -25,7 +36,8 @@ void loop() {
   Serial.println("Motor stop (coast)");
   Motor1.setSpeed(0); // motor stop (coasting)
   delay(2000); // wait for 2 seconds
- 
+  Serial.print("Current at stop="); Serial.println(Motor1.motorcurrent());
+
   Serial.println("Half speed backward");
   Motor1.setSpeed(-200); // motor half-speed "backward"
   delay(2000); // wait for 2 seconds
@@ -40,8 +52,9 @@ void loop() {
   Serial.print("Current="); Serial.println(Motor1.motorcurrent());
 
   Serial.println("Break at 3/4 power");
-  Motor1.brake(300); // motor stop 
+  Motor1.brake(300); // motor brake at 3/4 power
   delay(10);
-  Serial.print("Curren during brake="); Serial.println(Motor1.motorcurrent());
-  delay(2000); // wait for 2 seconds
+  Serial.print("Current during brake="); Serial.println(Motor1.motorcurrent());
+  delay(4000); // wait for 4 seconds
+  Serial.print("Current after brake="); Serial.println(Motor1.motorcurrent());
 }

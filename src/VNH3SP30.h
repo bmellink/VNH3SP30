@@ -23,6 +23,7 @@ public:
   uint8_t brake(int brakepower);
   uint8_t status(); 
   int motorcurrent();
+  int speed = 0;
 
 private:
   uint8_t _pwmPin = -1;

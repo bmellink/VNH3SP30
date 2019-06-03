@@ -37,9 +37,13 @@ These pins are so called "open collector" lines. Due to the fact Arduino pins ca
 
 ### Current sense
 
-The **current** sense line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varies for each chip, but in general the value is around 4700. You should connect a resistor between the CS line and GND to translate the current into a voltage the Arduino can measure (using analogRead()). The resistor value depends on the maximum current you expect your motors will need. 
+The **current** sense line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varies for each chip due to tolerance differences, but in general the value is around 4700. Most boards already have a resistor of 1.5k between the CS line and GND to translate the current into a voltage the Arduino can measure (using analogRead()). An additional RC circuit may be present to further stabilize the CS signal.
 
-**Example**: if the maximum motor current in your setup will not exceed 5A, the CS pin will provide a maximum current of 5/4700 = 0.00106 A = 1.06 mA. If your resister value is 3300 ohm, the voltage will then be 1.06 * 3300 = 3498 mV = 3.498 Volt. This would work ok if your Arduino runs on 5V and the ananlogReference() is set to DEFAULT. The motorcurrent() function will return a value of 3.498 / 5 * 1023 = 716. If you want to use the INTERNAL analog reference or if your Arduino runs on 3.3 V you should select a lower resistor value to ensure the maximum voltage value will not exceed the ananlogReference value.
+**Example**: if the motor current in your setup is 5A, the CS pin of the chip will provide a current of 5/4700 = 0.00106 A = 1.06 mA. With a board value of 1.5k = 1500 ohm, the voltage will be 1.06 * 1500 = 1590 mV = 1.590 Volt. The motorcurrent() function uses analogRead() to read this value, which means the value returned depends on the setting of analogReference() and the working voltage of your Arduino board:
+- If your Arduino runs at 5V and analogReference() is set to DEFAULT, motorcurrent() will return a value of 1.590 / 5 * 1023 = 325 for the above case
+- If you first change your analog reference setting with analogReference(INTERNAL2V56), the motorcurrent() function will return a value of 1.590 / 2.56 * 1023 = 636.
+
+**Tip**: It is always good practice to use analogReference() with one of the internal reference voltage options when you want to use analogRead() as the Arduino Vcc power may not be stable. This will improve stability of your readings.
 
 
 ### Example code (AVR)
@@ -61,7 +65,7 @@ VNH3SP30 Motor1;    // define control object for 1 motor
 void setup() {
   Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
   Serial.begin(115200);   
-  analogReference(DEFAULT);
+  analogReference(DEFAULT);  // use one of the INTERNAL reference settings to improve accuracy
   analogRead(M1_CS); // dummy
 }
 
@@ -74,6 +78,7 @@ void loop() {
   Serial.println("Motor stop (coast)");
   Motor1.setSpeed(0); // motor stop (coasting)
   delay(2000); // wait for 2 seconds
+  Serial.print("Current at stop="); Serial.println(Motor1.motorcurrent());
  
   Serial.println("Half speed backward");
   Motor1.setSpeed(-200); // motor half-speed "backward"
@@ -89,14 +94,20 @@ void loop() {
   Serial.print("Current="); Serial.println(Motor1.motorcurrent());
 
   Serial.println("Break at 3/4 power");
-  Motor1.brake(300); // motor stop 
+  Motor1.brake(300); // motor brake at 3/4 power
   delay(10);
   Serial.print("Current during brake="); Serial.println(Motor1.motorcurrent());
-  delay(2000); // wait for 2 seconds
+  delay(4000); // wait for 4 seconds
+  Serial.print("Current after brake="); Serial.println(Motor1.motorcurrent());
 }
 
 ```
 
+## Setting speed and breaking
+
+A motor controller will provide a fixed voltage to the motor, depending on the speed setting and the supply voltage of the VNH3SP30 board. A setSpeed() setting of 400 or -400 will provide the full supply voltage. A speed setting of 0 is equivalent to a non-connected motor. This means a motor will run free and the vehicle will not brake (except due to friction in the motor).
+
+The brake() function will force the motor to a halt. The braking power can be 0, which is free run and the same as setSpeed(0). A setting of brake(400) represents maximum brake level and is equivalent to a motor that is not connected to a power source, but with its power wires (black and red) connected.
 
 ## Class member functions and data members
 
@@ -125,10 +136,17 @@ Returns controller status. true is ok, false means overloaded
 ```
 int motorcurrent();
 ```
-Returns the value of analogRead() for the CS pin. This is a value proportional to the motor current.
+Returns the value of analogRead() for the CS pin. This is a value proportional to the motor current. See above.
 
+```
+int speed;
+```
+This variable contains the current speed setting.
+
+## Motor 
 ## Example sketches provided
 
 Example sketches:
 
-- **Demo**: Controls a single motor (sketch as shown above)
+- **Single**: Controls a single motor (sketch as shown above).
+- **Dual**: Controls two motors, including illustration how to implement vehicle turning.

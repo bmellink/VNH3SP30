@@ -38,6 +38,7 @@ uint8_t VNH3SP30::setSpeed(int speed) {
   	this->forward = false;
   }
   if (speed>400) speed = 400;
+  this->speed = (this->forward ? speed : -speed);
   analogWrite(this->_pwmPin, speed * 51 / 80); // map 400 to 255
   return this->status();
 }
@@ -48,6 +49,7 @@ uint8_t VNH3SP30::brake(int brakepower) {
   digitalWrite(this->_inaPin, LOW);
   digitalWrite(this->_inbPin, LOW);
   analogWrite(this->_pwmPin, brakepower * 51 / 80); // map 400 to 255
+  this->speed = 0;
   return this->status();
 }
 
