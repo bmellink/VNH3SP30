@@ -41,7 +41,7 @@ void loop() {
 
   Serial.println("Break at 3/4 power");
   Motor1.brake(300); // motor stop 
-  delay(100);
-  Serial.print("Current="); Serial.println(Motor1.motorcurrent());
+  delay(10);
+  Serial.print("Curren during brake="); Serial.println(Motor1.motorcurrent());
   delay(2000); // wait for 2 seconds
 }

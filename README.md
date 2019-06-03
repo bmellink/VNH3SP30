@@ -37,7 +37,7 @@ These pins are so called "open collector" lines. Due to the fact Arduino pins ca
 
 ### Current sense
 
-The **current** sense line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varries for each chip, but in general the value is around 4700. You should connect a resistor between the CS line and GND to translate the current into a voltage the Arduino can measure (using analogRead()). The resistor value depends on the maximum current you expect your motors will need. 
+The **current** sense line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varies for each chip, but in general the value is around 4700. You should connect a resistor between the CS line and GND to translate the current into a voltage the Arduino can measure (using analogRead()). The resistor value depends on the maximum current you expect your motors will need. 
 
 **Example**: if the maximum motor current in your setup will not exceed 5A, the CS pin will provide a maximum current of 5/4700 = 0.00106 A = 1.06 mA. If your resister value is 3300 ohm, the voltage will then be 1.06 * 3300 = 3498 mV = 3.498 Volt. This would work ok if your Arduino runs on 5V and the ananlogReference() is set to DEFAULT. The motorcurrent() function will return a value of 3.498 / 5 * 1023 = 716. If you want to use the INTERNAL analog reference or if your Arduino runs on 3.3 V you should select a lower resistor value to ensure the maximum voltage value will not exceed the ananlogReference value.
 
@@ -56,11 +56,13 @@ VNH3SP30 Motor1;    // define control object for 1 motor
 #define M1_INA 4    // control pin INA
 #define M1_INB 5    // control pin INB
 #define M1_DIAG 6   // diagnose pins (combined DIAGA/ENA and DIAGB/ENB)
-#define M1_CS 7     // current sense pin
+#define M1_CS A0     // current sense pin
 
 void setup() {
-  Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected to VNH3SP30 board through pins 
+  Motor1.begin(M1_PWM, M1_INA, M1_INB, M1_DIAG, M1_CS);    // Motor 1 object connected through specified pins 
   Serial.begin(115200);   
+  analogReference(DEFAULT);
+  analogRead(M1_CS); // dummy
 }
 
 void loop() {
@@ -88,8 +90,8 @@ void loop() {
 
   Serial.println("Break at 3/4 power");
   Motor1.brake(300); // motor stop 
-  delay(100);
-  Serial.print("Current="); Serial.println(Motor1.motorcurrent());
+  delay(10);
+  Serial.print("Current during brake="); Serial.println(Motor1.motorcurrent());
   delay(2000); // wait for 2 seconds
 }
 
