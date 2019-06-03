@@ -18,16 +18,18 @@
 class VNH3SP30 {
 
 public:
-  void begin(int8_t pwmPin=-1, int8_t inaPin=-1, int8_t inbPin=-1, int8_t diagPin=-1);
+  void begin(int8_t pwmPin=-1, int8_t inaPin=-1, int8_t inbPin=-1, int8_t diagPin=-1, int8_t csPin=-1);
   uint8_t setSpeed(int speed); 
   uint8_t brake(int brakepower);
   uint8_t status(); 
+  int motorcurrent();
 
 private:
   uint8_t _pwmPin = -1;
   uint8_t _inaPin = -1;
   uint8_t _inbPin = -1;
   uint8_t _diagPin = -1;
+  uint8_t _csPin = -1;
   uint8_t forward = true; // last speed command is forward
 };
 

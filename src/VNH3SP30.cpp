@@ -12,15 +12,17 @@
 #include <Arduino.h>
 #include <VNH3SP30.h>
 
-void VNH3SP30::begin(int8_t pwmPin, int8_t inaPin, int8_t inbPin, int8_t diagPin) {
+void VNH3SP30::begin(int8_t pwmPin, int8_t inaPin, int8_t inbPin, int8_t diagPin, int8_t csPin) {
   this->_pwmPin = pwmPin;
   this->_inaPin = inaPin;
   this->_inbPin = inbPin;
   this->_diagPin = diagPin;
+  this->_csPin = csPin;
   if (pwmPin>0) pinMode(pwmPin, OUTPUT);
   if (inaPin>0) pinMode(inaPin, OUTPUT);
   if (inbPin>0) pinMode(inbPin, OUTPUT);
   if (diagPin>0) pinMode(diagPin, INPUT_PULLUP);
+  if (csPin>0) pinMode(csPin, INPUT); // analog input
   this->setSpeed(0);
 }
 
@@ -53,3 +55,8 @@ uint8_t VNH3SP30::status() {
 	if (this->_diagPin<=0) return true;
 	return !digitalRead(this->_diagPin);
 } 
+
+int VNH3SP30::motorcurrent() {
+	if (this->_csPin<=0) return 0;
+	return analogRead(this->_csPin);
+}
