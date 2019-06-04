@@ -12,6 +12,10 @@
 #include <Arduino.h>
 #include <VNH3SP30.h>
 
+#ifdef ARDUINO_ARCH_ESP32
+  #include <analogWrite.h>
+#endif
+
 void VNH3SP30::begin(int8_t pwmPin, int8_t inaPin, int8_t inbPin, int8_t diagPin, int8_t csPin) {
   this->_pwmPin = pwmPin;
   this->_inaPin = inaPin;
@@ -27,6 +31,8 @@ void VNH3SP30::begin(int8_t pwmPin, int8_t inaPin, int8_t inbPin, int8_t diagPin
 }
 
 uint8_t VNH3SP30::setSpeed(int speed) {
+  // Ensure we do not reverse the ina and inb setting in case speed==0 to guarantee the motor
+  // will free run to a stop (if you reverse ina and inb setting the controller will issue a full brake)
   if (speed>0 || (speed==0 && this->forward)) {
   	digitalWrite(this->_inaPin, HIGH);
   	digitalWrite(this->_inbPin, LOW);
@@ -39,16 +45,16 @@ uint8_t VNH3SP30::setSpeed(int speed) {
   }
   if (speed>400) speed = 400;
   this->speed = (this->forward ? speed : -speed);
-  analogWrite(this->_pwmPin, speed * 51 / 80); // map 400 to 255
+  analogWrite(this->_pwmPin, speed * 51 / 80); // map 400 to 255 and generate pwm
   return this->status();
 }
 
-uint8_t VNH3SP30::brake(int brakepower) {
-  if (brakepower<0) brakepower = 0;
-  if (brakepower>400) brakepower = 400;
+uint8_t VNH3SP30::brake(int brakePower) {
+  if (brakePower<0) brakePower = 0;
+  if (brakePower>400) brakePower = 400;
   digitalWrite(this->_inaPin, LOW);
   digitalWrite(this->_inbPin, LOW);
-  analogWrite(this->_pwmPin, brakepower * 51 / 80); // map 400 to 255
+  analogWrite(this->_pwmPin, brakePower * 51 / 80); // map 400 to 255
   this->speed = 0;
   return this->status();
 }
@@ -58,7 +64,7 @@ uint8_t VNH3SP30::status() {
 	return !digitalRead(this->_diagPin);
 } 
 
-int VNH3SP30::motorcurrent() {
-	if (this->_csPin<=0) return 0;
+int VNH3SP30::motorCurrent() {
+	if (this->_csPin<0) return 0;
 	return analogRead(this->_csPin);
 }
