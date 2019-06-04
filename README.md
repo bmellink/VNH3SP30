@@ -7,14 +7,14 @@ To install this library use the **Arduino library manager** or use the **Clone o
 
 This library supports all AVR based Arduino boards that support the ```analogWrite()``` function to generate PWM signals (most boards). If you install the ```ESP_AnalogWrite``` library, this library also works with ESP32 boards (not yet fully tested).
 
-### VNH3SP30 board variations and interfaces
+## VNH3SP30 board variations and interfaces
 
 The controller boards come in various configurations. Some have a single controller chip, other may have two chips on a single board. There are three types of interfaces:
 - **control** interface to control the motor (3 for each chip)
 - **diagnose** interface to detect overload (2 for each chip, sometimes connected on board)
 - **current measurement** interface (not on all boards)
 
-## Control interface
+### Control interface
 
 Most boards have **3** key **control** lines:
 - PWM - duty cycle to control motor speed or brake power
@@ -28,7 +28,7 @@ Most boards have **3** key **control** lines:
 ```
 **Tip**: If you want to reverse the motor (forwards becomes backwards), you can either use negative values for the ```speed()``` function or simply reverse the INA and INB pins when calling the ```begin()``` function.
 
-## Enable/diagnose interface
+### Enable/diagnose interface
 
 All chips also have 2 **enable/diagnose** pins: **DIAGA/ENA** and **DIAGB/ENB**. These pins should have a pull up resister to Vcc (which is on most boards). These pins each have 2 functions:
 - enable the board (driving the DIAGA/ENA pin low will disable the A-side of the H bridge, driving DIAGB/ENB will disable the B-side of the H bridge).
@@ -38,7 +38,7 @@ These pins are so called "open collector" lines. Due to the fact Arduino pins ca
 
 **Tip**: You do not need to connect the enable/diagnose pins and can simply supply -1 for the diagnose pin number when calling the ```begin()``` function.
 
-## Current sense interface
+### Current sense interface
 
 The **current** sense line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varies for each chip due to tolerance differences, but in general the value is around 4700. Most boards already have a resistor of 1.5k between the CS line and GND to translate the current into a voltage the Arduino can measure (using ```analogRead()```). An additional RC circuit may be present to further stabilize the CS signal.
 
@@ -50,7 +50,7 @@ The **current** sense line (typically marked as CS) is not available on all boar
 
 **Tip**: You do not need to connect the current sense interface and can simply supply -1 for the CS pin number when calling the ```begin()``` function.
 
-### Example code
+## Example code
 
 This example shows all basic functions controlling a single motor. The example is also provided in the **Single.ino** sketch.
 
