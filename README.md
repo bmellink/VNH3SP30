@@ -1,5 +1,5 @@
-# Arduino VNH3SP30 motor controller library
-Arduino library for VNH3SP30, VNH2SP30, VNH3ASP30 based motor controller boards. The VNH3SP30 chips contain a full H bridge to drive motors with currents up to 30A.
+# Arduino VNH3SP30, VNH5019A-E motor controller library
+Arduino library for VNH3SP30, VNH2SP30, VNH3ASP30 and VNH5019A-E based motor controller boards. The VNH3SP30 and VNH5019A-E chips contain a full H bridge to drive motors with currents up to 30A. The VNH5019A-E chips are newer and almost identical to the VNH3SP30 chips. The biggest difference is that the VNH5019A-E chips work with 3.3V and 5V logic, while the older VNH3SP30 chips require 5V logic.
 
 ## Getting Started
 
@@ -40,7 +40,7 @@ These pins are so called "open collector" lines. Due to the fact Arduino pins ca
 
 ### Current sense interface
 
-The **current sense** line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varies for each chip due to tolerance differences, but in general the value is around 4700. Most boards already have a resistor of 1.5k between the CS line and GND to translate the current into a voltage the Arduino can measure (using ```analogRead()```). An additional RC circuit may be present to further stabilize the CS signal. This pin should be specified as ```csPin``` when calling the ```begin()``` function.
+The **current sense** line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varies for each chip due to tolerance differences, but in general the value for VNH3ASP30 chips is around 4700. for VNH5019A-E chips the value is around 7100. Most boards already have a resistor of 1.5k between the CS line and GND to translate the current into a voltage the Arduino can measure (using ```analogRead()```). An additional RC circuit may be present to further stabilize the CS signal. This pin should be specified as ```csPin``` when calling the ```begin()``` function.
 
 **Example**: if the motor current in your setup is 5A, the CS pin of the chip will provide a current of 5/4700 = 0.00106 A = 1.06 mA. With a board value of 1.5k = 1500 ohm, the voltage will be 1.06 * 1500 = 1590 mV = 1.590 Volt. The ```motorCurrent()``` function uses ```analogRead()``` to read this value, which means the value returned depends on the setting of ```analogReference()``` and the working voltage of your Arduino board:
 - If your Arduino runs at 5V and ```analogReference()``` is set to ```DEFAULT```, ```motorCurrent()``` will return a value of 1.590 / 5 * 1023 = 325 for the above case
