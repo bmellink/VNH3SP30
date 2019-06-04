@@ -5,7 +5,7 @@ Arduino library for VNH3SP30, VNH2SP30, VNH3ASP30 based motor controller boards.
 
 To install this library use the **Arduino library manager** or use the **Clone or download > Download ZIP** button on the repository home page and then install the library in your Arduino environment using **Sketch > Include Library > Add .ZIP Library...**
 
-This library supports all AVR based Arduino boards that support the ```analogWrite()``` function to generate PWM signals (most boards). If you install the ```ESP_AnalogWrite``` library, this library also works with ESP32 boards (not yet fully tested).
+This library supports all AVR based Arduino boards that support the ```analogWrite()``` function to generate PWM signals (most boards). If you install the ```ESP_AnalogWrite``` library, this library also works with ESP32 boards (not yet fully tested). Supports for STM32 boards: library compiles for this environment, but is not yet tested.
 
 ## VNH3SP30 board variations and interfaces
 
@@ -34,13 +34,13 @@ All chips also have 2 **enable/diagnose** pins: **DIAGA/ENA** and **DIAGB/ENB**.
 - enable the board (driving the DIAGA/ENA pin low will disable the A-side of the H bridge, driving DIAGB/ENB will disable the B-side of the H bridge).
 - fault condition: the VNH3SP30 chip will drive DIAG1/ENA or DIAGB/ENB low when the chip is overloaded (too high temperature on either the A or B side or a short between a motor pin and Vcc or GND).
 
-These pins are so called "open collector" lines. Due to the fact Arduino pins can not be programmed as open collector, this library only implements sensing fault conditions. This means you should connect both pins together to use as diagnose pin in this library. On some boards the DIAGA/ENA and DIAGB/ENB pins are already connected together as a single "**EN**" board connection.
+These pins are so called "open collector" lines. Due to the fact Arduino pins can not be programmed as open collector, this library only implements sensing fault conditions. This means you should connect both pins together to use as diagnose pin in this library. On some boards the DIAGA/ENA and DIAGB/ENB pins are already connected together as a single "**EN**" board connection. This pin should be specified as ```diagPin``` when calling the ```begin()``` function.
 
-**Tip**: You do not need to connect the enable/diagnose pins and can simply supply -1 for the diagnose pin number when calling the ```begin()``` function.
+**Tip**: You do not need to connect the enable/diagnose pins and can supply -1 for ```diagPin``` when calling the ```begin()``` function.
 
 ### Current sense interface
 
-The **current** sense line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varies for each chip due to tolerance differences, but in general the value is around 4700. Most boards already have a resistor of 1.5k between the CS line and GND to translate the current into a voltage the Arduino can measure (using ```analogRead()```). An additional RC circuit may be present to further stabilize the CS signal.
+The **current sense** line (typically marked as CS) is not available on all boards. The VNH3SP30 chip does not support this pin, but the VNH2SP30 and VNH3ASP30 do. The CS pin provides a current proportional to the motor current. The factor varies for each chip due to tolerance differences, but in general the value is around 4700. Most boards already have a resistor of 1.5k between the CS line and GND to translate the current into a voltage the Arduino can measure (using ```analogRead()```). An additional RC circuit may be present to further stabilize the CS signal. This pin should be specified as ```csPin``` when calling the ```begin()``` function.
 
 **Example**: if the motor current in your setup is 5A, the CS pin of the chip will provide a current of 5/4700 = 0.00106 A = 1.06 mA. With a board value of 1.5k = 1500 ohm, the voltage will be 1.06 * 1500 = 1590 mV = 1.590 Volt. The ```motorCurrent()``` function uses ```analogRead()``` to read this value, which means the value returned depends on the setting of ```analogReference()``` and the working voltage of your Arduino board:
 - If your Arduino runs at 5V and ```analogReference()``` is set to ```DEFAULT```, ```motorCurrent()``` will return a value of 1.590 / 5 * 1023 = 325 for the above case
@@ -48,7 +48,7 @@ The **current** sense line (typically marked as CS) is not available on all boar
 
 **Tip**: It is always good practice to use ```analogReference()``` with one of the internal reference voltage options when you want to use ```analogRead()``` as the Arduino Vcc power may not be stable. This will improve stability of your readings.
 
-**Tip**: You do not need to connect the current sense interface and can simply supply -1 for the CS pin number when calling the ```begin()``` function.
+**Tip**: You do not need to connect the current sense interface and can supply -1 for ```csPin``` when calling the ```begin()``` function.
 
 ## Example code
 
