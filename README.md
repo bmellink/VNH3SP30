@@ -151,3 +151,4 @@ Example sketches:
 
 - **Single**: Controls a single motor (sketch as shown above).
 - **Dual**: Controls two motors, including an illustration how to implement vehicle turning.
+- **Robotcar**: Example remote controlled car using the IBus protocol
